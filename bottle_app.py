@@ -65,12 +65,13 @@ def get_secret():
 def post_secret():
     session_id = request.cookies.get("session_id","-")
     user = '-'
-    if os.path.isfile(session_id + "-session.json"):
-        with open(session_id + "-session.json","w") as f:
+    session_id_file = session_id + "-session.json"
+    if os.path.isfile(session_id_file):
+        with open(session_id + "-session.json","r") as f:
             data = json.load(f)
-            user = data['user']
+        user = data['user']
     if user == "-":
-        return 'You need to log in to enter a secret!'
+        return f'You need to log in to enter a secret! {user} {session_id}'
     with open(f'data/{user}-profile.json',"r") as f:
         profile = json.load(f)
         favorite_color = profile['favorite_color']
@@ -151,7 +152,7 @@ def get_login():
     current_user = '-'
     if os.path.isfile(session_id + "-session.json"):
         with open(session_id + "-session.json","w") as f:
-            data = json.load(f))
+            data = json.load(f)
             current_user = data['user']
     if current_user != "-":
         return "Sorry, you have to sign out first."
@@ -169,14 +170,14 @@ def post_login():
 
     # set default response to '-' if login fails
     session_id = str(random.randint(0,100000000000))
-    response.set_cookie("session",session_id, path='/')
+    response.set_cookie("session_id",session_id, path='/')
 
     #response.set_cookie("user", '-', path='/')
     with open(session_id + "-session.json","w") as f:
         data = {
             "user":'-'
             }
-        json.dump(data,f))
+        json.dump(data,f)
 
     user = user.strip()
 
@@ -203,34 +204,23 @@ def post_login():
         data = {
             "user":user
             }
-        json.dump(data,f))
+        json.dump(data,f)
     return f"ok, it looks like you logged in as {user}"
 
 @route('/logout')
 def get_logout():
-    return "ok, it looks like you logged out"
-    with open(session_id + "-session.json","w") as f:
+    session_id = request.cookies.get("session_id","-")
+    session_id_file = session_id + "-session.json"
+    with open(session_id_file,"w") as f:
         data = {
             "user":'-'
             }
-        json.dump(data,f))
+        json.dump(data,f)
+    user ='-'
+    response.set_cookie("user",user, path='/')
+    return f"ok, it looks like you logged out {session_id_file}"
 
 if 'PYTHONANYWHERE_DOMAIN' in os.environ:
     application = default_app()
 else:
     run(host='localhost', port=8080)
-Footer
-© 2023 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
-information-security/bottle_app.py at main · gregdelozier/information-security
