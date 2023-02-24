@@ -44,9 +44,13 @@ def get_public():
 
 @get('/secret')
 def get_secret():
-    user = request.cookies.get("user","-")
-
-    if user == "-":
+    session_id = request.cookies.get("session_id","-")
+    session_id_file = session_id + "-session.json"
+    if os.path.isfile(session_id_file):
+        with open(session_id + "-session.json","r") as f:
+            data = json.load(f)
+        user = data['user']
+    if session_id == "-":
         return 'You need to log in to enter a secret!'
     with open(f'data/{user}-profile.json',"r") as f:
         profile = json.load(f)
@@ -143,8 +147,7 @@ def post_signup():
                 'key': to_string(Fernet.generate_key())
             }, f)
 
-    response.set_cookie("user", user, path='/')
-    return f"ok, it looks like you logged in as {user}"
+    return f"ok, you have successfully signed up. Please login."
 
 @get('/login')
 def get_login():
@@ -199,12 +202,13 @@ def post_login():
         return "Sorry, the user name and password do not match"
 
     # successful login
-    response.set_cookie("user", user, path='/')
     with open(session_id + "-session.json","w") as f:
         data = {
             "user":user
             }
         json.dump(data,f)
+
+    response.set_cookie("session_id", session_id, path='/')
     return f"ok, it looks like you logged in as {user}"
 
 @route('/logout')
@@ -216,9 +220,12 @@ def get_logout():
             "user":'-'
             }
         json.dump(data,f)
-    user ='-'
-    response.set_cookie("user",user, path='/')
-    return f"ok, it looks like you logged out {session_id_file}"
+
+    if os.path.exists(session_id_file):
+        os.remove(session_id_file)
+
+    response.set_cookie("session_id",'-', path='/')
+    return "ok, it looks like you logged out"
 
 if 'PYTHONANYWHERE_DOMAIN' in os.environ:
     application = default_app()
